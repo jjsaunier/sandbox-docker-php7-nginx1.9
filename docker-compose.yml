@@ -1,0 +1,30 @@
+app_volume:
+    image: 'busybox'
+    tty: true
+    restart: 'always'
+    volumes:
+      - '.:/var/www/'
+
+php-fpm:
+    build: 'php-fpm/php70'
+    expose:
+        - '9000'
+    volumes_from:
+        - 'app_volume'
+    restart: always
+
+php-cli:
+    build: 'php-cli'
+
+nginx:
+    build: 'nginx'
+    links:
+        - 'php-fpm'
+    ports:
+        - '80:80'
+        - '443:443'
+    restart: 'always'
+    volumes:
+        - 'ssl/:/etc/nginx/ssl/'
+    volumes_from:
+        - 'app_volume'
