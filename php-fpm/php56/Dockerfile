@@ -12,7 +12,7 @@ ENV PHP_AUTOCONF /usr/bin/autoconf
 ENV ENV_TYPE development
 
 # persistent / runtime deps
-RUN apt-get update && apt-get install -y ca-certificates wget librecode0 libmagickwand-dev imagemagick libsqlite3-0 libxml2 --no-install-recommends && rm -r /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y ca-certificates wget uuid-dev librecode0 libmagickwand-dev imagemagick libsqlite3-0 libxml2 --no-install-recommends && rm -r /var/lib/apt/lists/*
 
 # phpize deps
 RUN apt-get update && apt-get install -y autoconf file g++ gcc libc-dev make pkg-config re2c --no-install-recommends && rm -r /var/lib/apt/lists/*
@@ -134,6 +134,9 @@ RUN docker-php-ext-install-pecl redis
 RUN php -m | grep redis
 RUN docker-php-ext-install-pecl zip
 RUN php -m | grep zip
+RUN docker-php-ext-install-pecl uuid
+RUN php -m | grep uuid
+
 
 #CLEAN
 RUN apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false -o APT::AutoRemove::SuggestsImportant=false $buildDeps $PHP_AMQP_BUILD_DEPS

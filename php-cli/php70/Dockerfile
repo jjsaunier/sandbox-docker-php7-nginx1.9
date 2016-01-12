@@ -11,7 +11,7 @@ ENV PHP_AUTOCONF /usr/bin/autoconf
 ENV ENV_TYPE development
 
 # persistent / runtime deps
-RUN apt-get update && apt-get install -y ca-certificates wget librecode0 libmagickwand-dev libsasl2-dev imagemagick libsqlite3-0 libxml2 --no-install-recommends && rm -r /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y ca-certificates wget librecode0 uuid-dev libmagickwand-dev libsasl2-dev imagemagick libmagickwand-dev libmagickcore-dev libsqlite3-0 libxml2 --no-install-recommends && rm -r /var/lib/apt/lists/*
 
 # phpize deps
 RUN apt-get update && apt-get install -y autoconf file g++ gcc libc-dev make pkg-config re2c --no-install-recommends && rm -r /var/lib/apt/lists/*
@@ -111,7 +111,8 @@ RUN cd /usr/lib && \
     make && \
     make install
 
-#RUN docker-php-ext-install-pecl imagick
+RUN docker-php-ext-install-pecl imagick-3.4.0RC5
+RUN php -m | grep imagick
 
 RUN docker-php-ext-install-pecl amqp-1.7.0alpha2
 RUN php -m | grep amqp
@@ -121,6 +122,9 @@ RUN php -m | grep msgpack
 
 RUN docker-php-ext-install-pecl ev-beta
 RUN php -m | grep ev
+
+RUN docker-php-ext-install-pecl uuid
+RUN php -m | grep uuid
 
 # Mongo, installing also manually due to a bug with docker
 RUN cd /etc && git clone --depth=1 -b 1.1.1 https://github.com/mongodb/mongo-php-driver.git \

@@ -24,6 +24,24 @@ docker-compose -p sandbox ps
 docker run --rm -it -v $(pwd)/shared/composer:/root/.composer --volumes-from application_data_volume -w /var/www/ sandbox_php-cli composer install
 ```
 
+## Run php cli
+
+```bash
+docker run --rm -it sandbox_php-cli bash
+```
+
+With application volume : 
+
+```bash
+docker run --rm -it --volumes-from application_data_volume -w /var/www/ sandbox_php-cli bash
+```
+
+And if you want use composer, don't forget to mount cache folder
+
+```bash
+docker run --rm -it -v $(pwd)/shared/composer:/root/.composer sandbox_php-cli composer
+```
+
 ## Make writable directories
 
 ```bash
@@ -71,6 +89,7 @@ gd
 gettext
 hash
 iconv
+imagick
 intl
 json
 libxml
@@ -96,10 +115,12 @@ SPL
 sqlite3
 standard
 tokenizer
+uuid
 xml
 xmlreader
 xmlwriter
 Zend OPcache
 zip
 zlib
+
 ```
