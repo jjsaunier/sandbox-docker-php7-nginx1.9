@@ -1,23 +1,30 @@
-app_volume:
+application_data_volume:
     image: 'busybox'
     tty: true
     restart: 'always'
+    container_name: 'application_data_volume'
     volumes:
-      - '.:/var/www/'
+      - './www/:/var/www/'
 
 php-fpm:
     build: 'php-fpm/php70'
+    container_name: 'php-fpm'
     expose:
         - '9000'
     volumes_from:
-        - 'app_volume'
+        - 'application_data_volume'
     restart: always
 
 php-cli:
-    build: 'php-cli'
+    build: 'php-cli/php70'
+    container_name: 'php-cli'
+    volumes:
+        - './shared/composer/:/root/.composer/'
+    working_dir: /var/www
 
 nginx:
     build: 'nginx'
+    container_name: 'nginx'
     links:
         - 'php-fpm'
     ports:
@@ -25,6 +32,6 @@ nginx:
         - '443:443'
     restart: 'always'
     volumes:
-        - 'ssl/:/etc/nginx/ssl/'
+        - './shared/ssl/:/etc/nginx/ssl/:ro'
     volumes_from:
-        - 'app_volume'
+        - 'application_data_volume'

@@ -1,0 +1,9 @@
+/www/vendor/
+/shared/composer/auth.json
+/shared/composer/cache/
+/www/app/config/parameters.yml
+/www/web/bundles/
+/www/var/cache/
+/www/var/logs/
+/www/var/sessions/
+/www/var/bootstrap.php.cache

@@ -117,17 +117,24 @@ RUN cd /usr/lib && \
 
 RUN docker-php-ext-install-pecl phar
 RUN docker-php-ext-install-pecl imagick
+
 RUN docker-php-ext-install-pecl amqp
 RUN php -m | grep amqp
+
 RUN docker-php-ext-install-pecl big_int
+
 RUN docker-php-ext-install-pecl msgpack-0.5.7
 RUN php -m | grep msgpack
+
 RUN docker-php-ext-install-pecl ev
 RUN php -m | grep ev
+
 RUN docker-php-ext-install-pecl mongo
 RUN php -m | grep mongo
+
 RUN docker-php-ext-install-pecl redis
 RUN php -m | grep redis
+
 RUN docker-php-ext-install-pecl zip
 RUN php -m | grep zip
 
@@ -143,4 +150,7 @@ RUN curl https://raw.githubusercontent.com/php/php-src/PHP-$PHP_VERSION/php.ini-
 RUN sed -i 's/\;date\.timezone\ \=/date\.timezone\ \=\ Europe\/Paris/g' $PHP_INI_DIR/php.ini
 RUN sed -i "s/error_reporting = .*/error_reporting = E_ALL ^ E_STRICT/" $PHP_INI_DIR/php.ini
 
-CMD ["php", "-a"]
+# Composer
+RUN curl -sS https://getcomposer.org/installer | php && sudo mv composer.phar /usr/local/bin/composer
+RUN apt-get update && apt-get install -y git && rm -r /var/lib/apt/lists/*
+RUN mkdir -p /root/.composer

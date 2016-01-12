@@ -115,8 +115,10 @@ RUN cd /usr/lib && \
 
 RUN docker-php-ext-install-pecl amqp-1.7.0alpha2
 RUN php -m | grep amqp
+
 RUN docker-php-ext-install-pecl msgpack-2.0.0
 RUN php -m | grep msgpack
+
 RUN docker-php-ext-install-pecl ev-beta
 RUN php -m | grep ev
 
@@ -157,5 +159,7 @@ RUN curl https://raw.githubusercontent.com/php/php-src/PHP-$PHP_VERSION/php.ini-
 RUN sed -i 's/\;date\.timezone\ \=/date\.timezone\ \=\ Europe\/Paris/g' $PHP_INI_DIR/php.ini
 RUN sed -i "s/error_reporting = .*/error_reporting = E_ALL ^ E_STRICT/" $PHP_INI_DIR/php.ini
 
-CMD ["php", "-a"]
-
+# Composer
+RUN curl -sS https://getcomposer.org/installer | php && sudo mv composer.phar /usr/local/bin/composer
+RUN apt-get update && apt-get install -y git && rm -r /var/lib/apt/lists/*
+RUN mkdir -p /root/.composer
