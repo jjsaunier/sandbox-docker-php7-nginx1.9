@@ -157,10 +157,10 @@ RUN php -m | grep zip
 RUN docker-php-ext-install-pecl pthreads
 RUN php -m | grep pthreads
 
-RUN docker-php-ext-enable opcache
+RUN docker-php-ext-install-pecl zmq-1.1.3
+RUN php -m | grep zmq
 
-COPY php-fpm.conf /config/php-fpm.conf
-COPY www.pool.conf /config/pool/www.pool
+RUN docker-php-ext-enable opcache
 
 # Create php.ini
 RUN curl https://raw.githubusercontent.com/php/php-src/PHP-$PHP_VERSION/php.ini-$ENV_TYPE -o $PHP_INI_DIR/php.ini
@@ -178,5 +178,3 @@ RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 #Secure
 RUN chmod 755 /etc/container_environment
 RUN chmod 644 /etc/container_environment.sh /etc/container_environment.json
-
-CMD [ "php-fpm", "-F", "-y", "/config/php-fpm.conf", "-R" ]

@@ -154,12 +154,14 @@ RUN cd /etc && git clone --depth=1 -b php7 https://github.com/phpredis/phpredis.
     && touch $PHP_INI_DIR/conf.d/ext-redis.ini \
     && echo 'extension=redis.so' >> $PHP_INI_DIR/conf.d/ext-redis.ini
 
-
 RUN docker-php-ext-install-pecl zip
 RUN php -m | grep zip
 
 RUN docker-php-ext-install-pecl pthreads
 RUN php -m | grep pthreads
+
+RUN docker-php-ext-install-pecl zmq-1.1.3
+RUN php -m | grep zmq
 
 RUN docker-php-ext-enable opcache
 
