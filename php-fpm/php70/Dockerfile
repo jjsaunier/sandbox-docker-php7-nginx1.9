@@ -1,21 +1,27 @@
-FROM ubuntu:14.04
+FROM phusion/baseimage:latest
 
-MAINTAINER johann_27@hotmail.fr
+MAINTAINER saunier.johann@gmail.com
 
 ENV DEBIAN_FRONTEND noninteractive
 ENV PHP_INI_DIR /etc/php7
-ENV PHP_VERSION 7.0.2
-ENV PHP_FILENAME php-7.0.2.tar.xz
-ENV PHP_SHA256 556121271a34c442b48e3d7fa3d3bbb4413d91897abbb92aaeced4a7df5f2ab2
+ENV PHP_VERSION 7.0.3
+ENV PHP_FILENAME php-7.0.3.tar.xz
+ENV PHP_SHA256 3af2b62617a0e46214500fc3e7f4a421067224913070844d3665d6cc925a1cca
 ENV PHP_USER www-data
 ENV PHP_AUTOCONF /usr/bin/autoconf
 ENV ENV_TYPE development
 
+CMD ["/sbin/my_init"]
+
+RUN apt-get update && apt-get upgrade -y -o Dpkg::Options::="--force-confold"
+
 # persistent / runtime deps
-RUN apt-get update && apt-get install -y ca-certificates wget librecode0 uuid-dev libmagickwand-dev libsasl2-dev imagemagick libmagickwand-dev libmagickcore-dev libsqlite3-0 libxml2 --no-install-recommends && rm -r /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y \
+    ca-certificates wget librecode0 uuid-dev libmagickwand-dev libsasl2-dev \
+    imagemagick libmagickwand-dev libmagickcore-dev libsqlite3-0 libxml2 --no-install-recommends
 
 # phpize deps
-RUN apt-get update && apt-get install -y autoconf file g++ gcc libc-dev make pkg-config re2c --no-install-recommends && rm -r /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y autoconf file g++ gcc libc-dev make pkg-config re2c --no-install-recommends
 
 RUN mkdir -p $PHP_INI_DIR/conf.d
 
@@ -79,7 +85,8 @@ RUN cd /usr/src/php && ./configure \
         --with-pdo-mysqlnd \
         --with-gd \
         --with-pear \
-        --with-tsrm-pthreads \
+        --enable-maintainer-zts \
+        --enable-pthreads \
         --with-jpeg-dir=/usr \
         --with-png-dir=/usr \
         --with-xpm-dir=/usr \
@@ -101,10 +108,11 @@ COPY docker-php-ext-* /usr/local/bin/
 
 ENV PHP_AMQP_BUILD_DEPS libtool automake git pkg-config librabbitmq-dev libzmq-dev
 
-RUN apt-get update && apt-get install -y $PHP_AMQP_BUILD_DEPS --no-install-recommends && rm -r /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y $PHP_AMQP_BUILD_DEPS --no-install-recommends
 
 #Must be keep
-RUN apt-get update && apt-get install -y libmagickwand-dev libvips-dev libgsf-1-dev libmagickcore-dev libevent-dev --no-install-recommends && rm -r /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y \
+    libmagickwand-dev libvips-dev libgsf-1-dev libmagickcore-dev libevent-dev --no-install-recommends
 
 RUN cd /usr/lib && \
     git clone --depth=1 -b v0.7.1 git://github.com/alanxz/rabbitmq-c.git && \
@@ -115,13 +123,13 @@ RUN cd /usr/lib && \
     make && \
     make install
 
-RUN docker-php-ext-install-pecl imagick-3.4.0RC5
+RUN docker-php-ext-install-pecl imagick-3.4.0RC6
 RUN php -m | grep imagick
 
 RUN docker-php-ext-install-pecl amqp-1.7.0alpha2
 RUN php -m | grep amqp
 
-RUN docker-php-ext-install-pecl msgpack-2.0.0
+RUN docker-php-ext-install-pecl msgpack-2.0.1
 RUN php -m | grep msgpack
 
 RUN docker-php-ext-install-pecl ev-beta
@@ -130,16 +138,11 @@ RUN php -m | grep ev
 RUN docker-php-ext-install-pecl uuid
 RUN php -m | grep uuid
 
-# Mongo, installing also manually due to a bug with docker
-RUN cd /etc && git clone --depth=1 -b 1.1.1 https://github.com/mongodb/mongo-php-driver.git \
-    && cd /etc/mongo-php-driver \
-    && git submodule update --init \
-    && phpize \
-    && ./configure \
-    && make \
-    && make install \
-    && touch $PHP_INI_DIR/conf.d/ext-mongodb.ini \
-    && echo 'extension=mongodb.so' >> $PHP_INI_DIR/conf.d/ext-mongodb.ini
+RUN docker-php-ext-install-pecl mongodb
+RUN php -m | grep mongodb
+
+#RUN docker-php-ext-install-pecl redis
+#RUN php -m | grep redis
 
 # Currently not available through PECL :-(
 RUN cd /etc && git clone --depth=1 -b php7 https://github.com/phpredis/phpredis.git \
@@ -151,15 +154,14 @@ RUN cd /etc && git clone --depth=1 -b php7 https://github.com/phpredis/phpredis.
     && touch $PHP_INI_DIR/conf.d/ext-redis.ini \
     && echo 'extension=redis.so' >> $PHP_INI_DIR/conf.d/ext-redis.ini
 
+
 RUN docker-php-ext-install-pecl zip
 RUN php -m | grep zip
 
-RUN docker-php-ext-enable opcache
+RUN docker-php-ext-install-pecl pthreads
+RUN php -m | grep pthreads
 
-#CLEAN
-RUN apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false -o APT::AutoRemove::SuggestsImportant=false $buildDeps $PHP_AMQP_BUILD_DEPS
-RUN apt-get clean all
-RUN rm -Rf /usr/lib/rabbitmq-c
+RUN docker-php-ext-enable opcache
 
 COPY php-fpm.conf /config/php-fpm.conf
 COPY www.pool.conf /config/pool/www.pool
@@ -170,5 +172,15 @@ RUN curl https://raw.githubusercontent.com/php/php-src/PHP-$PHP_VERSION/php.ini-
 # Yes my lord, i'm gentle
 RUN sed -i 's/\;date\.timezone\ \=/date\.timezone\ \=\ Europe\/Paris/g' $PHP_INI_DIR/php.ini
 RUN sed -i "s/error_reporting = .*/error_reporting = E_ALL ^ E_STRICT/" $PHP_INI_DIR/php.ini
+
+#CLEAN
+RUN apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false -o \
+    APT::AutoRemove::SuggestsImportant=false $buildDeps $PHP_AMQP_BUILD_DEPS
+RUN rm -Rf /usr/lib/rabbitmq-c
+RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+#Secure
+RUN chmod 755 /etc/container_environment
+RUN chmod 644 /etc/container_environment.sh /etc/container_environment.json
 
 CMD [ "php-fpm", "-F", "-y", "/config/php-fpm.conf", "-R" ]
