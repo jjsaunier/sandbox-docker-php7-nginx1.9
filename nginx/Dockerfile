@@ -103,11 +103,11 @@ RUN rm -rf ${SETUP_DIR}/{nginx,ngx_pagespeed}
 RUN rm -rf /var/lib/apt/lists/*
 
 # Set config files
-COPY conf.d/ /etc/nginx/conf.d
+ADD conf.d/ /etc/nginx/conf.d
 COPY mime.types /etc/nginx/mime.types
 COPY fastcgi_params /etc/nginx/fastcgi_params
-COPY nginx.conf /etc/nginx/nginx.conf
-COPY www.conf /etc/nginx/sites-available/www.conf
+ADD nginx.conf /etc/nginx/nginx.conf
+ADD www.conf /etc/nginx/sites-available/www.conf
 
 # enable sites
 RUN mkdir /etc/nginx/sites-enabled
