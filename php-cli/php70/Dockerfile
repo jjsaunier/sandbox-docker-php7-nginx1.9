@@ -4,52 +4,74 @@ MAINTAINER saunier.johann@gmail.com
 
 ENV DEBIAN_FRONTEND noninteractive
 ENV PHP_INI_DIR /etc/php7
-ENV PHP_VERSION 7.0.3
-ENV PHP_FILENAME php-7.0.3.tar.xz
-ENV PHP_SHA256 3af2b62617a0e46214500fc3e7f4a421067224913070844d3665d6cc925a1cca
+ENV PHP_VERSION 7.0.6
+ENV PHP_FILENAME php-7.0.6.tar.xz
+ENV PHP_SHA256 1b237a9455e5476a425dbb9d99966bad68107747c601958cb9558a7fb49ab419
+ENV PHP_USER www-data
 ENV PHP_AUTOCONF /usr/bin/autoconf
 ENV ENV_TYPE development
+ENV PHP_AMQP_BUILD_DEPS libtool automake git pkg-config librabbitmq-dev
 
 CMD ["/sbin/my_init"]
 
-RUN apt-get update && apt-get upgrade -y -o Dpkg::Options::="--force-confold"
+RUN apt-get update && apt-get upgrade -y
 
 # persistent / runtime deps
-RUN apt-get update && apt-get install -y \
-    ca-certificates wget librecode0 uuid-dev libmagickwand-dev libsasl2-dev \
-    imagemagick libmagickwand-dev libmagickcore-dev libsqlite3-0 libxml2 --no-install-recommends
-
-# phpize deps
-RUN apt-get update && apt-get install -y autoconf file g++ gcc libc-dev make pkg-config re2c --no-install-recommends
+RUN apt-get install -y \
+    ca-certificates \
+    wget \
+    librecode0 \
+    uuid-dev \
+    mysql-client \
+    libmagickwand-dev \
+    libsasl2-dev \
+    imagemagick \
+    libmagickwand-dev \
+    libmagickcore-dev \
+    libsqlite3-0 \
+    libxml2 \
+    autoconf \
+    file \
+    g++ \
+    gcc \
+    libc-dev \
+    make \
+    pkg-config \
+    re2c \
+    libcurl4-openssl-dev \
+    libreadline6-dev \
+    librecode-dev \
+    libzip-dev \
+    libsqlite3-dev \
+    libssl-dev \
+    libxml2-dev \
+    xz-utils \
+    libicu-dev \
+    libpcre3-dev \
+    libbz2-dev \
+    libpq-dev \
+    libt1-dev \
+    libjpeg8 \
+    libpng12-dev \
+    libfreetype6-dev \
+    libmcrypt-dev \
+    libgd2-xpm-dev \
+    libgmp-dev \
+    curl \
+    $PHP_AMQP_BUILD_DEPS \
+    libmagickwand-dev \
+    libvips-dev \
+    libgsf-1-dev \
+    libmagickcore-dev \
+    libevent-dev \
+    libzmq-dev \
+    --no-install-recommends
 
 RUN mkdir -p $PHP_INI_DIR/conf.d
 
 RUN gpg --keyserver ha.pool.sks-keyservers.net --recv-keys "1A4E8B7277C42E53DBA9C7B9BCAA30EA9C0D5763";
 
-RUN buildDeps=" \
-        libcurl4-openssl-dev \
-        libreadline6-dev \
-        librecode-dev \
-        libzip-dev \
-        libsqlite3-dev \
-        libssl-dev \
-        libxml2-dev \
-        xz-utils \
-        libicu-dev \
-        libpcre3-dev \
-        libbz2-dev \
-        libpq-dev \
-        libt1-dev \
-        libjpeg8 \
-        libpng12-dev \
-        libfreetype6-dev \
-        libmcrypt-dev \
-        libgd2-xpm-dev \
-        libgmp-dev \
-        curl \
-    " \
-    && set -x \
-    && apt-get update && apt-get install -y $buildDeps --no-install-recommends && rm -rf /var/lib/apt/lists/* \
+RUN set -x \
     && curl -fSL "http://php.net/get/$PHP_FILENAME/from/this/mirror" -o "$PHP_FILENAME" \
     && echo "$PHP_SHA256 *$PHP_FILENAME" | sha256sum -c - \
     && curl -fSL "http://php.net/get/$PHP_FILENAME.asc/from/this/mirror" -o "$PHP_FILENAME.asc" \
@@ -61,11 +83,9 @@ RUN buildDeps=" \
 RUN cd /usr/src/php && ./configure \
         --with-config-file-path="$PHP_INI_DIR" \
         --with-config-file-scan-dir="$PHP_INI_DIR/conf.d" \
-        --disable-cgi \
         --enable-intl \
         --enable-pcntl \
         --enable-mbstring \
-        --enable-force-cgi-redirect \
         --with-mcrypt=/usr \
         --with-pcre-regex \
         --enable-pdo \
@@ -78,11 +98,14 @@ RUN cd /usr/src/php && ./configure \
         --with-curl=/usr/bin \
         --with-bz2 \
         --enable-sockets \
-        --with-pdo-mysqlnd \
+        --with-mysql=/usr/bin \
+        --with-mysqli \
+        --with-pdo-mysql \
         --with-gd \
         --with-pear \
         --enable-maintainer-zts \
-        --enable-pthreads \
+        --with-tsrm-pthreads \
+        --enable-pthreads=shared \
         --with-jpeg-dir=/usr \
         --with-png-dir=/usr \
         --with-xpm-dir=/usr \
@@ -101,14 +124,6 @@ RUN cd /usr/src/php && ./configure \
     && { find /usr/local/bin /usr/local/sbin -type f -executable -exec strip --strip-all '{}' + || true; }
 
 COPY docker-php-ext-* /usr/local/bin/
-
-ENV PHP_AMQP_BUILD_DEPS libtool automake git pkg-config librabbitmq-dev libzmq-dev
-
-RUN apt-get update && apt-get install -y $PHP_AMQP_BUILD_DEPS --no-install-recommends
-
-#Must be keep
-RUN apt-get update && apt-get install -y \
-    libmagickwand-dev libvips-dev libgsf-1-dev libmagickcore-dev libevent-dev --no-install-recommends
 
 RUN cd /usr/lib && \
     git clone --depth=1 -b v0.7.1 git://github.com/alanxz/rabbitmq-c.git && \
@@ -150,15 +165,17 @@ RUN cd /etc && git clone --depth=1 -b php7 https://github.com/phpredis/phpredis.
     && touch $PHP_INI_DIR/conf.d/ext-redis.ini \
     && echo 'extension=redis.so' >> $PHP_INI_DIR/conf.d/ext-redis.ini
 
-
 RUN docker-php-ext-install-pecl zip
 RUN php -m | grep zip
+
+RUN docker-php-ext-install-pecl zmq-1.1.3
+RUN php -m | grep zmq
 
 RUN docker-php-ext-install-pecl pthreads
 RUN php -m | grep pthreads
 
-RUN docker-php-ext-install-pecl zmq-1.1.3
-RUN php -m | grep zmq
+RUN docker-php-ext-install-pecl apcu-5.1.3
+RUN php -m | grep apcu
 
 RUN docker-php-ext-enable opcache
 
@@ -168,6 +185,12 @@ RUN curl https://raw.githubusercontent.com/php/php-src/PHP-$PHP_VERSION/php.ini-
 # Yes my lord, i'm gentle
 RUN sed -i 's/\;date\.timezone\ \=/date\.timezone\ \=\ Europe\/Paris/g' $PHP_INI_DIR/php.ini
 RUN sed -i "s/error_reporting = .*/error_reporting = E_ALL ^ E_STRICT/" $PHP_INI_DIR/php.ini
+
+# Composer
+RUN curl -sS https://getcomposer.org/installer | php && mv composer.phar /usr/local/bin/composer
+RUN mkdir -p /root/.composer
+
+VOLUME /root/.composer
 
 #CLEAN
 RUN apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false -o \

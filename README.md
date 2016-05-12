@@ -1,9 +1,13 @@
 Docker php7 nginx1.9 sandbox
 --------------------------
 
-**php version:** PHP 7.0.2 with amqp redis msgpack mongodb ev
+**php version:** PHP 7.0.6 with amqp redis msgpack mongodb ev apcu zmq uuid imagick zip pthreads (cli) 
 
 **nginx version:** nginx/1.9.9 with upload-progress-module pagespeed_module
+
+## Setup dist file
+
+`cp php-cli/php70/auth.json.dist php-cli/php70/auth.json` and then replace by your own github token.
 
 
 ## Run the stack
@@ -65,6 +69,13 @@ docker-compose -p sandbox logs
 docker-compose -p sandbox logs nginx
 ```
 
+## Config files
+
+* **php fpm** : `php-fpm/php70/php-fpm.conf`
+* **php fpm pool www** : `php-fpm/php70/www.pool.conf`
+* **nginx** : `nginx/nginx.conf`
+* **nginx www vhost** : `nginx/www.conf`
+
 ## PHP modules 
 
 ```bash
@@ -74,6 +85,7 @@ docker run --rm -it sandbox_php-cli php -m
 ```
 [PHP Modules]
 amqp
+apcu
 bcmath
 bz2
 Core
@@ -97,13 +109,17 @@ mbstring
 mcrypt
 mongodb
 msgpack
+mysqli
+mysqlnd
 openssl
 pcntl
 pcre
 PDO
+pdo_mysql
 pdo_sqlite
 Phar
 posix
+pthreads
 readline
 recode
 redis
@@ -122,5 +138,5 @@ xmlwriter
 Zend OPcache
 zip
 zlib
-
+zmq
 ```
