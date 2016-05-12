@@ -75,6 +75,11 @@ docker-compose -p sandbox logs nginx
 * **php fpm pool www** : `php-fpm/php70/www.pool.conf`
 * **nginx** : `nginx/nginx.conf`
 * **nginx www vhost** : `nginx/www.conf`
+* 
+
+## reload nginx conf
+
+`docker exec -ti nginx /usr/sbin/nginx -s reload`
 
 ## PHP modules 
 
